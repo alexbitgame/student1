@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Clothing Shop</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <h1>Clothing Shop</h1>
+    <nav>
+      <a href="login.html">Login</a> | <a href="admin-login.html">Admin Login</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="products"></section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    // load products
+    fetch('/api/products').then(r => r.json()).then(products => {
+      const container = document.getElementById('products');
+      container.innerHTML = products.map(p => `
+        <div class="product">
+          <div class="image">IMG</div>
+          <h3>${p.name}</h3>
+          <p>$${p.price.toFixed(2)}</p>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login - Clothing Shop</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    /* small inline adjustments for the role toggle */
+    .role-switch { display:flex; gap:8px; margin-bottom:12px; }
+    .role-switch button { padding:6px 12px; cursor:pointer; }
+    .role-switch .active { background:#222; color:#fff; }
+  </style>
+</head>
+<body>
+    
+  <main class="login">
+    <h2>Login</h2>
+
+    <div class="role-switch" id="roleSwitch">
+      <button type="button" data-role="user" class="active">Customer</button>
+      <button type="button" data-role="admin">Admin</button>
+    </div>
+
+    <form id="loginForm">
+      <input name="username" placeholder="Username" required>
+      <input name="password" type="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <p id="msg"></p>
+    <p><a id="backLink" href="index.html">Back to shop</a></p>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    (function(){
+      const roleSwitch = document.getElementById('roleSwitch');
+      let selectedRole = 'user';
+
+      // parse and sanitize optional next parameter for return links
+      function getNextPath() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get('next');
+          if (!next) return null;
+          // basic sanitize: allow only same-origin absolute paths starting with '/'
+          if (next.startsWith('/') && !next.startsWith('//') && !next.includes('http')) return next;
+          return null;
+        } catch (e) { return null; }
+      }
+
+      const nextPath = getNextPath();
+      if (nextPath) {
+        const backLink = document.getElementById('backLink');
+        backLink.setAttribute('href', nextPath);
+      }
+
+      roleSwitch.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-role]');
+        if (!btn) return;
+        selectedRole = btn.getAttribute('data-role');
+        roleSwitch.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const body = { username: fd.get('username'), password: fd.get('password') };
+        const msg = document.getElementById('msg');
+        msg.textContent = '';
+
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          if (res.status === 401) { msg.textContent = 'Invalid credentials'; return; }
+          if (!res.ok) { msg.textContent = 'Login failed'; return; }
+          const data = await res.json();
+          if (selectedRole === 'admin' && data.user.role !== 'admin') {
+            msg.textContent = 'Not an admin account';
+            return;
+          }
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          // redirect priority: nextPath -> admin if admin -> index
+          if (nextPath) {
+            window.location = nextPath;
+          } else if (selectedRole === 'admin' || data.user.role === 'admin') {
+            window.location = 'admin.html';
+          } else {
+            window.location = 'index.html';
+          }
+        } catch (err) {
+          msg.textContent = 'Network error';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

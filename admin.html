@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header><h1>Admin Dashboard</h1></header>
+  <main>
+    <p id="adminData">Loading...</p>
+    <p><a href="index.html">Go to shop</a></p>
+  </main>
+  <script>
+    const token = localStorage.getItem('token');
+    fetch('/api/admin-data', { headers: { Authorization: token || '' } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => document.getElementById('adminData').textContent = JSON.stringify(d))
+      .catch(() => document.getElementById('adminData').textContent = 'Unable to load admin data');
+  </script>
+</body>
+</html>
